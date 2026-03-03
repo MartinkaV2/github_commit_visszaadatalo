@@ -29,26 +29,26 @@ def p(color, msg):
 #  1. GIT telepítés ellenőrzése
 
 def check_git():
-    p(Color.CYAN, "\n🔍 Git telepítés ellenőrzése...")
+    p(Color.CYAN, "\n Git telepítés ellenőrzése...")
 
     git_path = shutil.which("git")
 
     if git_path is None:
-        p(Color.RED, "❌ A Git NEM található a gépen vagy nincs a PATH-ban!\n")
+        p(Color.RED, "A Git NEM található a gépen vagy nincs a PATH-ban!\n")
         p(Color.YELLOW, "📥 Telepítési lehetőségek:")
         print("   → Windows:  https://git-scm.com/download/win")
         print("   → Mac:      brew install git")
         print("   → Linux:    sudo apt install git  /  sudo dnf install git / sudo pacman -S git\n")
-        p(Color.YELLOW, "⚠  Telepítés után indítsd újra a CMD ablakot, majd futtasd újra a scriptet.")
+        p(Color.YELLOW, "Telepítés után indítsd újra a CMD ablakot, majd futtasd újra a scriptet.")
         sys.exit(1)
 
     try:
         result = subprocess.run(["git", "--version"], capture_output=True, text=True)
         version = result.stdout.strip()
-        p(Color.GREEN, f"✅ Git megtalálva: {version}")
+        p(Color.GREEN, f"Git megtalálva: {version}")
         p(Color.GREEN, f"   Elérési út: {git_path}\n")
     except Exception as e:
-        p(Color.RED, f"❌ Git futtatása sikertelen: {e}")
+        p(Color.RED, f"Git futtatása sikertelen: {e}")
         sys.exit(1)
 
 #  2. GIT konfiguráció ellenőrzése
@@ -67,9 +67,9 @@ def check_git_config():
         email = input("   Add meg az email címedet: ").strip()
         subprocess.run(["git", "config", "--global", "user.name",  name])
         subprocess.run(["git", "config", "--global", "user.email", email])
-        p(Color.GREEN, "✅ Git felhasználó beállítva.\n")
+        p(Color.GREEN, "Git felhasználó beállítva.\n")
     else:
-        p(Color.GREEN, f"✅ Git user: {name} <{email}>\n")
+        p(Color.GREEN, f"Git user: {name} <{email}>\n")
 
 #  3. REPO inicializálása / ellenőrzése
 
@@ -80,20 +80,19 @@ def init_repo(repo_path, remote_url=None):
     os.chdir(repo_path)
 
     if os.path.exists(".git"):
-        p(Color.YELLOW, "⚠  A mappa már inicializált Git repo.\n")
+        p(Color.YELLOW, "A mappa már inicializált Git repo.\n")
     else:
         subprocess.run(["git", "init"], check=True)
-        p(Color.GREEN, "✅ Git repo inicializálva.\n")
+        p(Color.GREEN, "Git repo inicializálva.\n")
 
     if remote_url:
         existing = subprocess.run(["git", "remote"], capture_output=True, text=True).stdout.strip()
         if "origin" in existing:
-            p(Color.YELLOW, "⚠  Remote 'origin' már létezik, frissítés...")
+            p(Color.YELLOW, "Remote 'origin' már létezik, frissítés...")
             subprocess.run(["git", "remote", "set-url", "origin", remote_url])
         else:
             subprocess.run(["git", "remote", "add", "origin", remote_url])
-        p(Color.GREEN, f"✅ Remote URL beállítva: {remote_url}\n")
-
+        p(Color.GREEN, f"Remote URL beállítva: {remote_url}\n")
 #  4. EGYETLEN visszaadatáló COMMIT
 
 def make_commit(date_str: str, message: str, file_name: str = None):
@@ -117,9 +116,9 @@ def make_commit(date_str: str, message: str, file_name: str = None):
     )
 
     if result.returncode == 0:
-        p(Color.GREEN, f"   ✅ [{date_str}]  {message}")
+        p(Color.GREEN, f"[{date_str}]  {message}")
     else:
-        p(Color.RED, f"   ❌ Hiba: {result.stderr.strip()}")
+        p(Color.RED, f"Hiba: {result.stderr.strip()}")
 
 #  5. Több COMMIT generálása
 
@@ -132,7 +131,7 @@ def generate_commits(start_date: str, end_date: str, count: int, messages: list)
     delta = (end - start).days
 
     if delta < 1:
-        p(Color.RED, "❌ A végdátumnak később kell lennie a kezdőnél.")
+        p(Color.RED, "A végdátumnak később kell lennie a kezdőnél.")
         return
 
     days_chosen = sorted(random.sample(range(delta + 1), min(count, delta + 1)))
@@ -146,7 +145,7 @@ def generate_commits(start_date: str, end_date: str, count: int, messages: list)
         msg = messages[i % len(messages)]
         make_commit(date_str, msg)
 
-    p(Color.GREEN, f"\n✅ {len(days_chosen)} commit sikeresen létrehozva!\n")
+    p(Color.GREEN, f"\n{len(days_chosen)} commit sikeresen létrehozva!\n")
 
 #  6. PUSH
 
@@ -158,9 +157,9 @@ def push_to_github(force=False):
         cmd.append("--force")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode == 0:
-        p(Color.GREEN, "✅ Push sikeres!")
+        p(Color.GREEN, "Push sikeres!")
     else:
-        p(Color.RED, f"❌ Push hiba:\n{result.stderr.strip()}")
+        p(Color.RED, f"Push hiba:\n{result.stderr.strip()}")
         p(Color.YELLOW, "   Tipp: Ha már volt push, próbáld force push-szal (válaszd az F opciót).")
 
 #  7. Interaktív menü
@@ -176,14 +175,14 @@ def menu():
     check_git()
     check_git_config()
 
-    repo_path  = input("📁 Repo mappa neve/elérési útja (Enter = jelenlegi mappa): ").strip()
+    repo_path  = input("Repo mappa neve/elérési útja (Enter = jelenlegi mappa): ").strip()
     if not repo_path:
         repo_path = os.getcwd()
 
-    remote_url = input("🔗 GitHub remote URL (Enter = kihagyás): ").strip() or None
+    remote_url = input("GitHub remote URL (Enter = kihagyás): ").strip() or None
     init_repo(repo_path, remote_url)
 
-    p(Color.CYAN, "\n📋 Mit szeretnél csinálni?")
+    p(Color.CYAN, "\nMit szeretnél csinálni?")
     print("  [1] Egyetlen commit adott dátumra")
     print("  [2] Több commit automatikus generálása (dátumtartomány)")
     print("  [3] Csak push (már meglévő commitokhoz)")
@@ -192,14 +191,14 @@ def menu():
     choice = input("\n👉 Választás: ").strip().upper()
 
     if choice == "1":
-        date_str = input("📅 Dátum (YYYY-MM-DD HH:MM:SS, pl. 2024-10-15 10:00:00): ").strip()
-        message  = input("💬 Commit üzenet: ").strip()
+        date_str = input("Dátum (YYYY-MM-DD HH:MM:SS, pl. 2024-10-15 10:00:00): ").strip()
+        message  = input("Commit üzenet: ").strip()
         make_commit(date_str, message)
 
     elif choice == "2":
-        start  = input("📅 Kezdő dátum (YYYY-MM-DD, pl. 2024-10-01): ").strip()
-        end    = input("📅 Záró dátum  (YYYY-MM-DD, pl. 2024-10-31): ").strip()
-        count  = int(input("🔢 Hány commitot generáljon? (pl. 20): ").strip())
+        start  = input("Kezdő dátum (YYYY-MM-DD, pl. 2024-10-01): ").strip()
+        end    = input("Záró dátum  (YYYY-MM-DD, pl. 2024-10-31): ").strip()
+        count  = int(input("Hány commitot generáljon? (pl. 20): ").strip())
         p(Color.YELLOW, "\nÍrd be a commit üzeneteket (minden sor egy üzenet, üres sor = kész):")
         messages = []
         while True:
@@ -219,19 +218,19 @@ def menu():
         pass  # csak push következik
 
     elif choice == "Q":
-        p(Color.YELLOW, "👋 Kilépés.")
+        p(Color.YELLOW, "Kilépés.")
         sys.exit(0)
     else:
-        p(Color.RED, "❌ Érvénytelen választás.")
+        p(Color.RED, "Érvénytelen választás.")
         sys.exit(1)
 
     if choice in ("1", "2"):
-        do_push = input("\n📤 Szeretnéd pusholni GitHub-ra? (i/n): ").strip().lower()
+        do_push = input("\nSzeretnéd pusholni GitHub-ra? (i/n): ").strip().lower()
         if do_push == "i":
-            force = input("   Force push? (n = normál, f = --force): ").strip().lower() == "f"
+            force = input(" Force push? (n = normál, f = --force): ").strip().lower() == "f"
             push_to_github(force)
 
-    p(Color.GREEN + Color.BOLD, "\n🎉 Kész! Ellenőrizd a GitHub commit grafikonon.\n")
+    p(Color.GREEN + Color.BOLD, "\nKész! Ellenőrizd a GitHub commit grafikonon.\n")
 
 
 #  Belépési pont
