@@ -262,11 +262,56 @@ def push_to_github(force=False):
     if force:
         cmd.append("--force")
     result = subprocess.run(cmd, capture_output=True, text=True)
+
     if result.returncode == 0:
         p(Color.GREEN, "Push sikeres!")
-    else:
-        p(Color.RED, f"Push hiba:\n{result.stderr.strip()}")
-        p(Color.YELLOW, "   Tipp: Ha már volt push, próbáld force push-szal (válaszd az F opciót).")
+        return
+
+    stderr = result.stderr.strip()
+    p(Color.RED, f"Push hiba:\n{stderr}")
+
+    # "fetch first" hiba: a remote-on már van tartalom amit lokálisan nem ismer
+    if "fetch first" in stderr or "rejected" in stderr:
+        p(Color.YELLOW, "\nA remote repo már tartalmaz commitokat, amik nincsenek meg lokálisan.")
+        p(Color.YELLOW, "Mit szeretnél tenni?")
+        print("  [1] Pull + rebase, majd push (biztonságos, megőrzi a remote tartalmát)")
+        print("  [2] Force push (felülírja a remote-ot, elveszíti az ottani változásokat)")
+        print("  [3] Kihagyás")
+        sub = input("\nVálasztás: ").strip()
+
+        if sub == "1":
+            p(Color.CYAN, "Pull és rebase folyamatban...")
+            pull = subprocess.run(
+                ["git", "pull", "--rebase", "origin", "main"],
+                capture_output=True, text=True
+            )
+            if pull.returncode == 0:
+                p(Color.GREEN, "Pull sikeres, push újra...")
+                retry = subprocess.run(
+                    ["git", "push", "-u", "origin", "main"],
+                    capture_output=True, text=True
+                )
+                if retry.returncode == 0:
+                    p(Color.GREEN, "Push sikeres!")
+                else:
+                    p(Color.RED, f"Push hiba a pull utan is:\n{retry.stderr.strip()}")
+            else:
+                p(Color.RED, f"Pull sikertelen:\n{pull.stderr.strip()}")
+                p(Color.YELLOW, "Tipp: Lehet merge konfliktus, oldd fel manuálisan, majd futtasd: git push origin main")
+
+        elif sub == "2":
+            p(Color.CYAN, "Force push folyamatban...")
+            force_result = subprocess.run(
+                ["git", "push", "-u", "origin", "main", "--force"],
+                capture_output=True, text=True
+            )
+            if force_result.returncode == 0:
+                p(Color.GREEN, "Force push sikeres!")
+            else:
+                p(Color.RED, f"Force push hiba:\n{force_result.stderr.strip()}")
+
+        else:
+            p(Color.YELLOW, "Push kihagyva.")
 
 #  8. Interaktív menü
 
