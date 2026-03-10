@@ -26,6 +26,20 @@ class Color:
 def p(color, msg):
     print(f"{color}{msg}{Color.RESET}")
 
+#  Dátum normalizálás (Git timezone-t igényel)
+
+def normalize_git_date(date_str: str) -> str:
+    """
+    Biztosítja, hogy a dátum tartalmaz timezone offset-et.
+    Git megköveteli: 'YYYY-MM-DD HH:MM:SS +0000'
+    Ha nincs offset, automatikusan hozzáadja a +0000-t (UTC).
+    """
+    date_str = date_str.strip()
+    # Ha már van timezone offset (pl. +0100, -0500, +0000), hagyjuk
+    if len(date_str) > 19 and (date_str[-5] in ('+', '-')):
+        return date_str
+    return date_str + " +0000"
+
 #  1. GIT telepítés ellenőrzése
 
 def check_git():
@@ -97,6 +111,8 @@ def init_repo(repo_path, remote_url=None):
 #  4. EGYETLEN visszaadatáló COMMIT
 
 def make_commit(date_str: str, message: str, file_name: str = None):
+    git_date = normalize_git_date(date_str)   # <-- timezone fix
+
     if file_name is None:
         ts = date_str.replace(" ", "_").replace(":", "-")
         file_name = f"change_{ts}.txt"
@@ -108,8 +124,8 @@ def make_commit(date_str: str, message: str, file_name: str = None):
     subprocess.run(["git", "add", file_name], check=True)
 
     env = os.environ.copy()
-    env["GIT_AUTHOR_DATE"]    = date_str
-    env["GIT_COMMITTER_DATE"] = date_str
+    env["GIT_AUTHOR_DATE"]    = git_date
+    env["GIT_COMMITTER_DATE"] = git_date
 
     result = subprocess.run(
         ["git", "commit", "-m", message],
@@ -162,6 +178,8 @@ def set_repo_creation_date(date_str: str, commit_message: str = "Initial commit"
     )
     has_commits = result.returncode == 0 and result.stdout.strip() != ""
 
+    git_date = normalize_git_date(date_str)   # <-- timezone fix
+
     if not has_commits:
         # -- UJ REPO: initial commit backdatálva --------------------------------
         p(Color.CYAN, f"\nInitial commit létrehozása visszadatálva: {date_str}")
@@ -172,8 +190,8 @@ def set_repo_creation_date(date_str: str, commit_message: str = "Initial commit"
         subprocess.run(["git", "add", "README.md"], check=True)
 
         env = os.environ.copy()
-        env["GIT_AUTHOR_DATE"]    = date_str
-        env["GIT_COMMITTER_DATE"] = date_str
+        env["GIT_AUTHOR_DATE"]    = git_date
+        env["GIT_COMMITTER_DATE"] = git_date
 
         res = subprocess.run(
             ["git", "commit", "-m", commit_message],
@@ -225,8 +243,8 @@ def set_repo_creation_date(date_str: str, commit_message: str = "Initial commit"
 
         env_filter = (
             f'if [ "$GIT_COMMIT" = "{root_hash}" ]; then '
-            f'export GIT_AUTHOR_DATE="{date_str}"; '
-            f'export GIT_COMMITTER_DATE="{date_str}"; '
+            f'export GIT_AUTHOR_DATE="{git_date}"; '
+            f'export GIT_COMMITTER_DATE="{git_date}"; '
             f'fi'
         )
 
